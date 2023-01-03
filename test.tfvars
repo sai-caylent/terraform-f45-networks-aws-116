@@ -11,6 +11,7 @@ tags = {
      environment = "test"
      owner       = "sai"
      project     = "f45"
+     Terraform = "true"
 }
 
 

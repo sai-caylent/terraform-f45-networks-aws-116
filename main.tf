@@ -10,7 +10,7 @@ locals {
 #tfsec:ignore:aws-vpc-no-excessive-port-access tfsec:ignore:aws-vpc-no-public-ingress-acl
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.14.0"
+  version = "3.18.0"
 
   name = "${local.vpc_name}-vpc-${var.account_name}"
   azs  = var.azs
@@ -27,11 +27,31 @@ module "vpc" {
   public_subnets      = var.public_subnets
   private_subnets     = var.private_subnets
   database_subnets    = var.database_subnets
-  # elasticache_subnets = var.elasticache_subnets
-  # redshift_subnets    = var.redshift_subnets
   intra_subnets       = var.intra_subnets
 
   tags = var.tags
+}
+# Endpoints
+#tfsec:ignore:aws-vpc-no-public-ingress-sgr tfsec:ignore:aws-vpc-no-public-egress-sgr tfsec:ignore:aws-vpc-no-public-ingress-acl tfsec:ignore:aws-vpc-no-public-egress-acl
+module "sg_vpc_endpoints" {
+  source      = "terraform-aws-modules/security-group/aws"
+  version     = "4.16.2"
+  name        = "ecr_vpc_endpoint"
+  description = "Allow ECR traffic"
+  vpc_id      = module.vpc.vpc_id
+
+  # TODO: the current implementation doesn't use private subnets cidr blocks
+  # ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_rules       = ["all-all"]
+  egress_rules        = ["all-all"]
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "ecr_vpc_endpoint"
+    }
+  )
 }
 # TODO: should deny access not coming from the VPC https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/41da6881e295ff5e94bbf97b41018e7c550c7285/examples/complete-vpc/main.tf#L211
 data "aws_iam_policy_document" "generic_endpoint_policy" {
@@ -55,7 +75,7 @@ data "aws_iam_policy_document" "generic_endpoint_policy" {
 
 module "endpoints" {
   source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
-  version = "3.14.0"
+  version = "3.18.0"
 
   vpc_id             = module.vpc.vpc_id
   security_group_ids = [module.sg_vpc_endpoints.security_group_id]
@@ -101,3 +121,58 @@ module "endpoints" {
 
   tags = var.tags
 }
+
+# # Flowlog
+# resource "aws_flow_log" "flowlog" {
+#   iam_role_arn    = aws_iam_role.flowlog.arn
+#   log_destination = aws_cloudwatch_log_group.flowlog.arn
+#   traffic_type    = "ALL"
+#   vpc_id          = module.vpc.vpc_id
+# }
+
+# #tfsec:ignore:aws-cloudwatch-log-group-customer-key
+# resource "aws_cloudwatch_log_group" "flowlog" {
+#   #checkov:skip=CKV_AWS_158: TODO: validate if kms is required
+#   name              = "${local.vpc_name}-vpc-flowlog-${var.env_name}"
+#   retention_in_days = 180
+#   tags              = var.tags
+# }
+
+# resource "aws_iam_role" "flowlog" {
+#   name = "${local.vpc_name}-vpc-flowlog-${var.account_name}"
+#   assume_role_policy = jsonencode({
+#     Version : "2012-10-17"
+#     Statement : [
+#       {
+#         Sid : ""
+#         Effect : "Allow"
+#         Principal : {
+#           Service : "vpc-flow-logs.amazonaws.com"
+#         }
+#         Action : "sts:AssumeRole"
+#       }
+#     ]
+#   })
+# }
+
+# #tfsec:ignore:aws-iam-no-policy-wildcards
+# resource "aws_iam_role_policy" "flowlog" {
+#   name = "${local.vpc_name}-vpc-flowlog-${var.account_name}"
+#   role = aws_iam_role.flowlog.id
+#   policy = jsonencode({
+#     Version : "2012-10-17"
+#     Statement : [
+#       {
+#         Action : [
+#           "logs:CreateLogGroup",
+#           "logs:CreateLogStream",
+#           "logs:PutLogEvents",
+#           "logs:DescribeLogGroups",
+#           "logs:DescribeLogStreams",
+#         ]
+#         Effect : "Allow"
+#         Resource : "${aws_cloudwatch_log_group.flowlog.arn}:*"
+#       }
+#     ]
+#   })
+# }
