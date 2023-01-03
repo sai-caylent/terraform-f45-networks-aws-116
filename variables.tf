@@ -54,22 +54,6 @@ variable "intra_subnets" {
   default     = []
 }
 
-# variable "alb_https_certificate_arn" {
-#   type        = string
-#   description = "The ARN of the certificate associated to the HTTPS listener."
-# }
-
-# variable "alb_https_ssl_policy" {
-#   type        = string
-#   description = "Name of the SSL policy of the HTTPS listener."
-#   default     = "ELBSecurityPolicy-TLS-1-2-2017-01"
-# }
-
-# variable "alb_host_to_redirect" {
-#   type        = string
-#   description = "The host of the default redirect."
-# }
-
 variable "tags" {
   type        = map(any)
   description = "The tags map to associate to the resources."
