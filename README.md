@@ -15,7 +15,7 @@
 3. terraform-aws-modules/vpc/aws//modules/vpc-endpoints
 
 # you need to download the modules before you can use them
-# to download the modules, please run terraform init
+to download the modules, please run terraform init
 
 ## to deploy this on dev account
 1. run terraforom plan -var-file dev.tfvars 
