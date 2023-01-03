@@ -3,8 +3,10 @@
 1. Generate the new repository based on this template.
 2. Edit the files from the root as you need
    1. main.tf
-   2. *.tfvars files
-   
+   2. versions.tf
+   3. variables.tf
+   4. outputs.tf
+   5. .tfvars
 
 
 ## Modules used in this template
