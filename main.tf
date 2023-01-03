@@ -1,13 +1,9 @@
-# TODO: resolve checkov and tfsec skipped rules
-
 locals {
   vpc_name    = var.env_name == "" ? "primary" : var.env_name
   alb_name    = var.env_name == "" ? "primary-${var.account_name}" : "${var.env_name}-${var.account_name}"
   logs_suffix = var.env_name == "" ? var.account_name : "${var.env_name}-${var.account_name}"
 }
 
-# VPC
-#tfsec:ignore:aws-vpc-no-excessive-port-access tfsec:ignore:aws-vpc-no-public-ingress-acl
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "3.18.0"
@@ -22,7 +18,7 @@ module "vpc" {
   enable_dns_hostnames                   = true
   enable_dns_support                     = true
   enable_nat_gateway                     = true
-  single_nat_gateway                     = true
+  single_nat_gateway                     = false
 
   public_subnets      = var.public_subnets
   private_subnets     = var.private_subnets
@@ -32,7 +28,7 @@ module "vpc" {
   tags = var.tags
 }
 # Endpoints
-#tfsec:ignore:aws-vpc-no-public-ingress-sgr tfsec:ignore:aws-vpc-no-public-egress-sgr tfsec:ignore:aws-vpc-no-public-ingress-acl tfsec:ignore:aws-vpc-no-public-egress-acl
+
 module "sg_vpc_endpoints" {
   source      = "terraform-aws-modules/security-group/aws"
   version     = "4.16.2"
@@ -53,15 +49,8 @@ module "sg_vpc_endpoints" {
     }
   )
 }
-# TODO: should deny access not coming from the VPC https://github.com/terraform-aws-modules/terraform-aws-vpc/blob/41da6881e295ff5e94bbf97b41018e7c550c7285/examples/complete-vpc/main.tf#L211
+
 data "aws_iam_policy_document" "generic_endpoint_policy" {
-  #checkov:skip=CKV_AWS_1:for now allowing full "*-*" administrative privileges
-  #checkov:skip=CKV_AWS_49:for now allowing wildcard in actions
-  #checkov:skip=CKV_AWS_107:for now allowing credentials exposure
-  #checkov:skip=CKV_AWS_108:for now allowing data exfiltration
-  #checkov:skip=CKV_AWS_109:for now allowing permissions management / resource exposure without constraints
-  #checkov:skip=CKV_AWS_110:for now allowing privilege escalation
-  #checkov:skip=CKV_AWS_111:for now allowing write access without constraints
   statement {
     actions   = ["*"]
     resources = ["*"]
