@@ -6,7 +6,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.18.0"
+  version = "3.18.1"
 
   name = "${local.vpc_name}-vpc-${var.account_name}"
   azs  = var.azs
@@ -64,7 +64,7 @@ data "aws_iam_policy_document" "generic_endpoint_policy" {
 
 module "endpoints" {
   source  = "terraform-aws-modules/vpc/aws//modules/vpc-endpoints"
-  version = "3.18.0"
+  version = "3.18.1"
 
   vpc_id             = module.vpc.vpc_id
   security_group_ids = [module.sg_vpc_endpoints.security_group_id]
