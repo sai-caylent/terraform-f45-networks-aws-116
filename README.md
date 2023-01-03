@@ -9,7 +9,7 @@
    5. .tfvars
 
 
-## Modules used in this template
+## Modules used in this template.
 1. terraform-aws-modules/vpc/aws
 2. terraform-aws-modules/security-group/aws
 3. terraform-aws-modules/vpc/aws//modules/vpc-endpoints
