@@ -12,18 +12,29 @@ module "vpc" {
   azs  = var.azs
   cidr = var.cidr
 
-  create_database_subnet_group           = true
+  create_database_subnet_group           = var.create_database_subnet_group
   create_database_subnet_route_table     = true
   create_database_internet_gateway_route = false
   enable_dns_hostnames                   = true
   enable_dns_support                     = true
-  enable_nat_gateway                     = true
+  enable_nat_gateway                     = false
   single_nat_gateway                     = false
 
   public_subnets      = var.public_subnets
   private_subnets     = var.private_subnets
   database_subnets    = var.database_subnets
   intra_subnets       = var.intra_subnets
+
+# add network acl to retrict access 
+  private_dedicated_network_acl = true
+  private_inbound_acl_rules = var.private_inbound_acl_rules
+  public_dedicated_network_acl = true
+  public_inbound_acl_rules = var.public_inbound_acl_rules
+  database_dedicated_network_acl = true
+  database_inbound_acl_rules = var.database_inbound_acl_rules 
+  intra_dedicated_network_acl = true
+  intra_inbound_acl_rules = var.intra_inbound_acl_rules
+
 
   tags = var.tags
 }
@@ -36,9 +47,7 @@ module "sg_vpc_endpoints" {
   description = "Allow ECR traffic"
   vpc_id      = module.vpc.vpc_id
 
-  # TODO: the current implementation doesn't use private subnets cidr blocks
-  # ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
   ingress_rules       = ["all-all"]
   egress_rules        = ["all-all"]
 
@@ -50,14 +59,23 @@ module "sg_vpc_endpoints" {
   )
 }
 
+# Deny access to all except from vpc
 data "aws_iam_policy_document" "generic_endpoint_policy" {
   statement {
+    effect    = "Deny"
     actions   = ["*"]
     resources = ["*"]
-    effect    = "Allow"
+
     principals {
       type        = "*"
       identifiers = ["*"]
+    }
+
+    condition {
+      test     = "StringNotEquals"
+      variable = "aws:SourceVpc"
+
+      values = [module.vpc.vpc_id]
     }
   }
 }

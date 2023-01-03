@@ -59,3 +59,26 @@ variable "tags" {
   description = "The tags map to associate to the resources."
   default     = {}
 }
+
+variable "private_inbound_acl_rules" {
+  type = list(map(string))
+  default = [ {} ]
+}
+
+variable "public_inbound_acl_rules" {
+  type = list(map(string))
+  default = [ {} ]
+}
+variable "database_inbound_acl_rules" {
+  type = list(map(string))
+  default = [ {} ]
+}
+variable "intra_inbound_acl_rules" {
+  type = list(map(string))
+  default = [ {} ]
+}
+variable "create_database_subnet_group" {
+  type = bool
+  default = true
+  
+}
